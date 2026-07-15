@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waad Elzubair Mohamed — Digital Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root{
+    --ink:#182b3a;
+    --paper:#f4f1ea;
+    --paper-line:#d9d3c4;
+    --brass:#a8813f;
+    --brass-deep:#8a6a2f;
+    --green:#3f5d4f;
+    --red:#8a3d34;
+    --muted:#6b6455;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+  }
+
+  body{
+    display:flex;
+    justify-content:center;
+    padding:40px 16px 60px;
+    background-image:linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size:100% 32px;
+    background-position:0 140px;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:560px;
+  }
+
+  .card{
+    background:var(--paper);
+    border:1.5px solid var(--ink);
+    position:relative;
+    padding:40px 36px 32px;
+  }
+
+  .card::before{
+    content:"";
+    position:absolute;
+    inset:6px;
+    border:1px solid var(--brass);
+    pointer-events:none;
+  }
+
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--brass-deep);
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:24px;
+  }
+  .eyebrow span:last-child{ color:var(--muted); }
+
+  .head-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:22px;
+  }
+
+  h1{
+    font-family:'Newsreader', serif;
+    font-weight:600;
+    font-size:30px;
+    line-height:1.15;
+    margin:0 0 6px;
+    color:var(--ink);
+  }
+
+  .title{
+    font-family:'Newsreader', serif;
+    font-style:italic;
+    font-weight:400;
+    font-size:15px;
+    color:var(--green);
+    margin:0;
+  }
+
+  #qrbox{
+    flex-shrink:0;
+    background:#fff;
+    border:1px solid var(--ink);
+    padding:6px;
+    line-height:0;
+  }
+
+  .rule{ border:none; border-top:1.5px solid var(--ink); margin:0 0 20px; }
+  .rule.thin{ border-top:1px solid var(--paper-line); margin:14px 0; }
+
+  .ledger{ display:flex; flex-direction:column; }
+  .line{
+    display:grid;
+    grid-template-columns:88px 1fr;
+    align-items:baseline;
+    padding:10px 0;
+    border-bottom:1px dotted var(--paper-line);
+    gap:10px;
+  }
+  .line:last-child{ border-bottom:none; }
+  .label{ font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
+  .value{ font-size:14px; color:var(--ink); word-break:break-word; }
+  .value a{ color:var(--ink); text-decoration:none; border-bottom:1px solid var(--brass); }
+  .value a:hover, .value a:focus-visible{ color:var(--brass-deep); border-bottom-color:var(--brass-deep); }
+
+  .cta{
+    margin-top:26px;
+    display:block;
+    text-align:center;
+    background:var(--ink);
+    color:var(--paper);
+    text-decoration:none;
+    font-size:12.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    padding:14px 20px;
+    transition:background 0.15s ease;
+  }
+  .cta:hover, .cta:focus-visible{ background:var(--brass-deep); }
+
+  /* Tabs */
+  .tabs{
+    display:flex;
+    margin-top:30px;
+    border-bottom:1.5px solid var(--ink);
+  }
+  .tab-btn{
+    flex:1;
+    background:none;
+    border:none;
+    border-top:1px solid var(--ink);
+    border-left:1px solid var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    padding:10px 6px;
+    cursor:pointer;
+    color:var(--muted);
+    background:#eae6da;
+  }
+  .tab-btn:last-child{ border-right:1px solid var(--ink); }
+  .tab-btn.active{
+    background:var(--paper);
+    color:var(--ink);
+    font-weight:600;
+    border-bottom:1.5px solid var(--paper);
+    margin-bottom:-1.5px;
+  }
+  .tab-btn:focus-visible{ outline:2px solid var(--brass-deep); outline-offset:-2px; }
+
+  .panel{ display:none; padding-top:22px; }
+  .panel.active{ display:block; }
+
+  .about-text{
+    font-size:14px;
+    line-height:1.65;
+    color:var(--ink);
+    white-space:pre-wrap;
+  }
+
+  .about-edit-area{
+    width:100%;
+    min-height:110px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    line-height:1.6;
+    color:var(--ink);
+    background:#fff;
+    border:1px solid var(--paper-line);
+    padding:10px;
+    resize:vertical;
+  }
+
+  /* Sub-tabs for projects */
+  .subtabs{ display:flex; gap:8px; margin-bottom:16px; }
+  .subtab-btn{
+    background:none;
+    border:1px solid var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:6px 12px;
+    cursor:pointer;
+    color:var(--muted);
+  }
+  .subtab-btn.active{ background:var(--ink); color:var(--paper); }
+  .subtab-btn:focus-visible{ outline:2px solid var(--brass-deep); outline-offset:2px; }
+  .subpanel{ display:none; }
+  .subpanel.active{ display:block; }
+
+  .item{
+    border:1px solid var(--paper-line);
+    background:#fbf9f4;
+    padding:14px 16px;
+    margin-bottom:12px;
+    position:relative;
+  }
+  .item h3{
+    font-family:'Newsreader', serif;
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 4px;
+    color:var(--ink);
+  }
+  .item .meta{
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--brass-deep);
+    margin-bottom:6px;
+  }
+  .item p{ font-size:13px; line-height:1.55; margin:0; color:var(--ink); }
+  .item a.item-link{ font-size:12px; color:var(--green); border-bottom:1px solid var(--green); text-decoration:none; }
+
+  .empty-note{
+    font-size:12.5px;
+    color:var(--muted);
+    font-style:italic;
+    padding:10px 0;
+  }
+
+  .erase-btn{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:none;
+    border:1px solid var(--red);
+    color:var(--red);
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:4px 8px;
+    cursor:pointer;
+    display:none;
+  }
+  .edit-on .erase-btn{ display:inline-block; }
+
+  .add-form{
+    display:none;
+    border:1px dashed var(--brass);
+    padding:14px 16px;
+    margin-bottom:16px;
+    background:#fff;
+  }
+  .edit-on .add-form{ display:block; }
+
+  .add-form input, .add-form textarea{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    padding:8px;
+    border:1px solid var(--paper-line);
+    margin-bottom:8px;
+    background:#fdfcf9;
+  }
+  .add-form textarea{ min-height:60px; resize:vertical; }
+
+  .add-btn{
+    background:var(--green);
+    color:var(--paper);
+    border:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:9px 16px;
+    cursor:pointer;
+  }
+  .add-btn:hover{ background:#324e42; }
+
+  /* Edit mode toggle */
+  .edit-toggle-row{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:26px;
+  }
+  .edit-toggle{
+    background:none;
+    border:1px solid var(--muted);
+    color:var(--muted);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:7px 14px;
+    cursor:pointer;
+  }
+  .edit-toggle.on{
+    border-color:var(--brass-deep);
+    color:var(--brass-deep);
+    font-weight:600;
+  }
+
+  .hint{
+    font-size:10.5px;
+    color:var(--muted);
+    text-align:right;
+    margin-top:6px;
+    display:none;
+  }
+  .edit-on ~ .hint, .edit-on .hint{ display:block; }
+
+  @media (max-width:400px){
+    .card{ padding:30px 20px 26px; }
+    h1{ font-size:24px; }
+    .line{ grid-template-columns:76px 1fr; }
+    .head-row{ flex-direction:column; }
+    #qrbox{ align-self:flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card">
+
+    <div class="eyebrow">
+      <span>Digital Card</span>
+      <span id="today"></span>
+    </div>
+
+    <div class="head-row">
+      <div>
+        <h1>Waad Elzubair Mohamed</h1>
+        <p class="title">Business Student, University of Stirling<br>Aspiring Business Analyst</p>
+      </div>
+      <div id="qrbox"></div>
+    </div>
+
+    <hr class="rule">
+
+    <div class="ledger">
+      <div class="line">
+        <span class="label">Email</span>
+        <span class="value"><a href="mailto:lavywats40@gmail.com">lavywats40@gmail.com</a></span>
+      </div>
+      <div class="line">
+        <span class="label">Phone</span>
+        <span class="value"><a href="tel:+971508235412">+971 50 823 5412</a></span>
+      </div>
+      <div class="line">
+        <span class="label">LinkedIn</span>
+        <span class="value"><a href="https://www.linkedin.com/in/waad-abdelrahman-ali-elzubair-mohamed-21750a400" target="_blank" rel="noopener">/in/waad-elzubair-mohamed</a></span>
+      </div>
+    </div>
+
+    <a class="cta" href="https://www.linkedin.com/in/waad-abdelrahman-ali-elzubair-mohamed-21750a400" target="_blank" rel="noopener">Connect on LinkedIn →</a>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="about">About</button>
+      <button class="tab-btn" data-tab="projects">Projects</button>
+      <button class="tab-btn" data-tab="experience">Experience</button>
+    </div>
+
+    <!-- ABOUT -->
+    <div class="panel active" id="panel-about">
+      <p class="about-text" id="aboutText"></p>
+      <textarea class="about-edit-area" id="aboutEditArea" style="display:none;"></textarea>
+    </div>
+
+    <!-- PROJECTS -->
+    <div class="panel" id="panel-projects">
+      <div class="subtabs">
+        <button class="subtab-btn active" data-sub="casestudy">Case Studies</button>
+        <button class="subtab-btn" data-sub="practical">Practical</button>
+      </div>
+
+      <div class="subpanel active" id="sub-casestudy">
+        <div class="add-form" id="form-casestudy">
+          <input type="text" placeholder="Project title" data-field="title">
+          <input type="text" placeholder="Date / course (optional)" data-field="meta">
+          <textarea placeholder="Short description"></textarea>
+          <input type="text" placeholder="Link (optional)" data-field="link">
+          <button class="add-btn" onclick="addItem('casestudy')">+ Add case study</button>
+        </div>
+        <div id="list-casestudy"></div>
+      </div>
+
+      <div class="subpanel" id="sub-practical">
+        <div class="add-form" id="form-practical">
+          <input type="text" placeholder="Project title" data-field="title">
+          <input type="text" placeholder="Date / tools used (optional)" data-field="meta">
+          <textarea placeholder="Short description"></textarea>
+          <input type="text" placeholder="Link (optional)" data-field="link">
+          <button class="add-btn" onclick="addItem('practical')">+ Add practical project</button>
+        </div>
+        <div id="list-practical"></div>
+      </div>
+    </div>
+
+    <!-- EXPERIENCE -->
+    <div class="panel" id="panel-experience">
+      <div class="add-form" id="form-experience">
+        <input type="text" placeholder="Role" data-field="title">
+        <input type="text" placeholder="Organization · Dates" data-field="meta">
+        <textarea placeholder="What you did"></textarea>
+        <input type="text" placeholder="Link (optional)" data-field="link">
+        <button class="add-btn" onclick="addItem('experience')">+ Add experience</button>
+      </div>
+      <div id="list-experience"></div>
+    </div>
+
+    <div class="edit-toggle-row">
+      <button class="edit-toggle" id="editToggle">Edit mode: off</button>
+    </div>
+    <div class="hint">Edits are saved in this browser only — reopen this file to keep them.</div>
+
+  </div>
+</div>
+
+<script>
+  // date
+  document.getElementById('today').textContent =
+    new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+
+  // QR code to LinkedIn
+  new QRCode(document.getElementById("qrbox"), {
+    text: "https://www.linkedin.com/in/waad-abdelrahman-ali-elzubair-mohamed-21750a400",
+    width: 84,
+    height: 84,
+    colorDark: "#182b3a",
+    colorLight: "#ffffff"
+  });
+
+  // ---- Tabs ----
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.subtab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('sub-'+btn.dataset.sub).classList.add('active');
+    });
+  });
+
+  // ---- Edit mode ----
+  const card = document.getElementById('card');
+  const editToggle = document.getElementById('editToggle');
+  let editOn = false;
+
+  const EDIT_PASSWORD = "Waatr245";
+
+  // ---- EmailJS setup ----
+  const EMAILJS_SERVICE_ID = "service_wqx8m1c";
+  const EMAILJS_TEMPLATE_ID = "template_ki2q5qr";
+  const EMAILJS_PUBLIC_KEY = "3fzMXlLVBzID0AJN9";
+
+  if (window.emailjs) {
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+  }
+
+  function notifyByEmail(message){
+    if (!window.emailjs) return;
+    const timestamp = new Date().toLocaleString();
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      message: `${message}\n\nTime: ${timestamp}\nPage: ${window.location.href}`,
+      from_name: "Digital Card Alert",
+      reply_to: "no-reply@example.com"
+    }).catch(err => console.error("EmailJS error:", err));
+  }
+
+  editToggle.addEventListener('click', ()=>{
+    if(!editOn){
+      const attempt = prompt('Enter password to edit:');
+      if(attempt === null) return; // cancelled
+      if(attempt !== EDIT_PASSWORD){
+        alert('Incorrect password.');
+        notifyByEmail("⚠️ Wrong password entered on your digital card's edit mode.");
+        return;
+      }
+    }
+    editOn = !editOn;
+    card.classList.toggle('edit-on', editOn);
+    editToggle.classList.toggle('on', editOn);
+    editToggle.textContent = editOn ? 'Edit mode: on' : 'Edit mode: off';
+    toggleAboutEdit();
+    if(editOn){
+      notifyByEmail("🔓 Someone entered the correct password and unlocked edit mode on your digital card.");
+    }
+  });
+
+  // ---- About text ----
+  const aboutText = document.getElementById('aboutText');
+  const aboutEditArea = document.getElementById('aboutEditArea');
+  const defaultAbout = "Business student at the University of Stirling with a growing interest in data-driven decision making. Currently exploring a path toward business analysis / business analytics — working on projects that combine financial fundamentals with practical problem-solving. Open to internships, placements, and entry-level opportunities.";
+
+  function loadAbout(){
+    const saved = localStorage.getItem('waad_about');
+    aboutText.textContent = saved || defaultAbout;
+    aboutEditArea.value = saved || defaultAbout;
+  }
+
+  function toggleAboutEdit(){
+    if(editOn){
+      aboutText.style.display = 'none';
+      aboutEditArea.style.display = 'block';
+    } else {
+      localStorage.setItem('waad_about', aboutEditArea.value.trim());
+      aboutText.textContent = aboutEditArea.value.trim();
+      aboutText.style.display = 'block';
+      aboutEditArea.style.display = 'none';
+    }
+  }
+
+  loadAbout();
+
+  // ---- Projects / Experience storage ----
+  const STORE_KEYS = { casestudy:'waad_casestudy', practical:'waad_practical', experience:'waad_experience' };
+
+  function getItems(key){
+    try{ return JSON.parse(localStorage.getItem(STORE_KEYS[key])) || []; }
+    catch(e){ return []; }
+  }
+  function saveItems(key, items){
+    localStorage.setItem(STORE_KEYS[key], JSON.stringify(items));
+  }
+
+  function renderList(key){
+    const listEl = document.getElementById('list-'+key);
+    const items = getItems(key);
+    listEl.innerHTML = '';
+    if(items.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty-note';
+      empty.textContent = 'Nothing added yet.';
+      listEl.appendChild(empty);
+      return;
+    }
+    items.forEach((it, idx)=>{
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <button class="erase-btn" onclick="eraseItem('${key}', ${idx})">✕ Erase</button>
+        <h3>${escapeHtml(it.title)}</h3>
+        ${it.meta ? `<div class="meta">${escapeHtml(it.meta)}</div>` : ''}
+        <p>${escapeHtml(it.desc)}</p>
+        ${it.link ? `<br><a class="item-link" href="${escapeAttr(it.link)}" target="_blank" rel="noopener">View →</a>` : ''}
+      `;
+      listEl.appendChild(div);
+    });
+  }
+
+  function addItem(key){
+    const form = document.getElementById('form-'+key);
+    const title = form.querySelector('[data-field="title"]').value.trim();
+    const meta = form.querySelector('[data-field="meta"]').value.trim();
+    const desc = form.querySelector('textarea').value.trim();
+    const link = form.querySelector('[data-field="link"]').value.trim();
+    if(!title || !desc){
+      alert('Please add at least a title and a short description.');
+      return;
+    }
+    const items = getItems(key);
+    items.push({ title, meta, desc, link });
+    saveItems(key, items);
+    form.querySelectorAll('input, textarea').forEach(el=>el.value='');
+    renderList(key);
+    notifyByEmail(`➕ New item added to "${key}" on your digital card:\nTitle: ${title}`);
+  }
+
+  function eraseItem(key, idx){
+    const items = getItems(key);
+    const removed = items[idx];
+    items.splice(idx, 1);
+    saveItems(key, items);
+    renderList(key);
+    notifyByEmail(`➖ Item erased from "${key}" on your digital card:\nTitle: ${removed ? removed.title : '(unknown)'}`);
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function escapeAttr(str){
+    return str.replace(/"/g,'&quot;');
+  }
+
+  ['casestudy','practical','experience'].forEach(renderList);
+</script>
+
+</body>
+</html>
